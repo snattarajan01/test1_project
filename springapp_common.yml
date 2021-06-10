@@ -1,0 +1,61 @@
+apiVersion: app.ibm.com/v1alpha1
+kind: Channel
+metadata:
+  name: springapp-git-channel
+  namespace: cfmr-cluster
+  labels:
+    mcmapp: springpet-sample
+spec:
+  type: GitHub 
+  pathname: https://github.com/snattarajan01/test1_project.git
+  configMapRef:
+    name: springapp-git-skip-cert-verify
+    kind: ConfigMap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: springapp-git-skip-cert-verify
+  namespace: cfmr-cluster
+  labels:
+    mcmapp: springapp-sample
+data:
+  insecureSkipVerify: "true"
+    
+---
+apiVersion: app.ibm.com/v1alpha1
+kind: PlacementRule
+metadata:
+  name: springapp-git-placementrule
+  namespace: cfmr-cluster
+  labels:
+    mcmapp: springapp-sample
+spec: 
+  clusterReplicas: 1
+  clusterLabels:
+    matchExpressions:
+      - key: name
+        operator: In
+        values:
+          - cfmr-cluster
+---
+apiVersion: app.ibm.com/v1alpha1
+kind: Subscription
+metadata:
+  name: springapp-git-subscription
+  namespace: cfmr-cluster
+  labels:
+    mcmapp: springapp-sample
+spec:
+  channel: cfmr-cluster/springapp-git-channel
+  name: repo/springappsample
+  placement:
+    placementRef: 
+      name: springapp-git-placementrule
+      kind: PlacementRule
+      apiVersion: app.ibm.com/v1alpha1
+  overrides:
+    - clusterName: "/"
+      clusterOverrides:
+      - path: "metadata.namespace"
+        value: cfmr-cluster
